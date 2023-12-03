@@ -2,6 +2,7 @@ import pandas as pd
 import numpy as np
 import sqlite3 as sq
 import os
+#  import registration as reg
 #  import pathlib
 #  import datetime
 
@@ -31,10 +32,15 @@ sheet_name = 'DB'
 table_name_db = 'CBAppointment'
 table_link = "Links"
 tab_mes = 'Message'
+tables_name = ['DB', 'ID', 'IDTM', 'IDTD', 'Links']
 
+global table_message
 
 async def on_startup(bot: Dispatcher):
+    global table_message
     await db_start(table_name_db, sheet_name)
+    table_message = await read_table_google_sheets(table_SH_name, tab_mes)
+#    await reg.main()
 
 
 #
@@ -42,7 +48,7 @@ async def on_startup(bot: Dispatcher):
 async def start(message: types.message):
     # global count
     # global page
-    table_message = await read_table_google_sheets(table_SH_name, tab_mes)
+#    table_message = await read_table_google_sheets(table_SH_name, tab_mes)
     text = table_message['message'][0]
     request_contact_button = KeyboardButton(text="Отправить контакт", request_contact=True)
     reply_markup = ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard=True)
@@ -62,7 +68,7 @@ async def process_document(message: types.Message):
             pass
         await document.download(destination_file=f'{document.file_name}')
         table_replace = pd.read_excel(os.path.abspath(document.file_name))
-        table_replace.to_sql(docName, sq.connect('appointment.db'), if_exists='replace', index=False)
+        table_replace.to_sql(docName, sq.connect('../data/appointment.db'), if_exists='replace', index=False)
         table_message = await read_table_google_sheets(table_SH_name, tab_mes)
         text = table_message['message'][1]
         await botMes.send_message(text=f"{text.format(docName)}", chat_id=message.chat.id)
@@ -70,13 +76,12 @@ async def process_document(message: types.Message):
         table_message = await read_table_google_sheets(table_SH_name, tab_mes)
         text = table_message['message'][2]
         await botMes.send_message(text=text, chat_id=message.chat.id)
-
-
 # #
 #
 
 @bot.message_handler(content_types='text')  # Обработка всех текстовых сообщений
 async def handle_message(message: types.Message):
+    global  table_message
     # await botMes.send_message(text='В связи с окончанием мероприятия чат-бот больше не отвечает на вопросы. Приносим свои извинения!', chat_id=message.chat.id)
     link_table_read = pd.DataFrame(await list_table_from_db(table_link))
 
@@ -90,11 +95,11 @@ async def handle_message(message: types.Message):
         # Если информации нет для человека
         if await meeting_search_from_db("phone_meeting", table_name_db, message.chat.id) is None or len(
                 str(await meeting_search_from_db("phone_meeting", table_name_db, message.chat.id))) < 3:
-            table_message = await read_table_google_sheets(table_SH_name, tab_mes)
+#            table_message = await read_table_google_sheets(table_SH_name, tab_mes)
             text = table_message['message'][3]
             await botMes.send_message(text=f'{text}', chat_id=message.chat.id, parse_mode=types.ParseMode.HTML)
         else:  # Если информация есть для человека
-            table_message = await read_table_google_sheets(table_SH_name, tab_mes)
+#            table_message = await read_table_google_sheets(table_SH_name, tab_mes)
             text = table_message['message'][4]
             phoneMeeting = "+" + str(int(await meeting_search_from_db("phone_meeting", table_name_db, message.chat.id)))
             text = text.format(await search_from_db("user_name", table_name_db, message.chat.id),
@@ -102,7 +107,7 @@ async def handle_message(message: types.Message):
                                await search_from_db("date_arrival", table_name_db, message.chat.id),
                                await search_from_db("time_arrival", table_name_db, message.chat.id),
                                await meeting_search_from_db("name_meeting", table_name_db, message.chat.id),
-                               f'<a href="{phoneMeeting}">{phoneMeeting}</a>',
+                               f'<a href="tel:{phoneMeeting}">{phoneMeeting}</a>',
                                await search_from_db("arrival_flight_number", table_name_db, message.chat.id))
             await botMes.send_message(text=f'{text}', chat_id=message.chat.id, parse_mode=types.ParseMode.HTML)
 
@@ -110,12 +115,12 @@ async def handle_message(message: types.Message):
         if await User_search_from_db("hotel_name", table_name_db, message.chat.id) is None or len(
                 str(User_search_from_db("hotel_name", table_name_db, message.chat.id))) < 3:
             # Если информации нет для человека
-            table_message = await read_table_google_sheets(table_SH_name, tab_mes)
+ #           table_message = await read_table_google_sheets(table_SH_name, tab_mes)
             text = table_message['message'][12]
             await botMes.send_message(text=text.format(f'<a href="@Moiseeva_Ekaterina">@Moiseeva_Ekaterina</a>'),
                                       chat_id=message.chat.id, parse_mode=types.ParseMode.HTML)
         else:  # Если информация есть для человека
-            table_message = await read_table_google_sheets(table_SH_name, tab_mes)
+#            table_message = await read_table_google_sheets(table_SH_name, tab_mes)
             text = table_message['message'][5]
             await botMes.send_message(
                 text=text.format(await search_from_db("user_name", table_name_db, message.chat.id),
@@ -128,43 +133,48 @@ async def handle_message(message: types.Message):
         if await driver_search_from_db("driver_phone", table_name_db, message.chat.id) is None or len(
                 str(await driver_search_from_db("driver_phone", table_name_db, message.chat.id))) < 3:
             # Если информации нет для человека
-            table_message = await read_table_google_sheets(table_SH_name, tab_mes)
+#            table_message = await read_table_google_sheets(table_SH_name, tab_mes)
             text = table_message['message'][6]
             await botMes.send_message(text=text.format(f'<a href="@Moiseeva_Ekaterina">@Moiseeva_Ekaterina</a>'),
                                       chat_id=message.chat.id, parse_mode=types.ParseMode.HTML)
         else:  # Если информация есть для человека
             driverPhone = "+" + str(int(await driver_search_from_db("driver_phone", table_name_db, message.chat.id)))
-            table_message = await read_table_google_sheets(table_SH_name, tab_mes)
+#            table_message = await read_table_google_sheets(table_SH_name, tab_mes)
             text = table_message['message'][7]
             await botMes.send_message(
                 text=text.format(await search_from_db("user_name", table_name_db, message.chat.id),
                                  await search_from_db("date_departure", table_name_db, message.chat.id),
                                  await search_from_db("time_departure", table_name_db, message.chat.id),
                                  await driver_search_from_db("driver_name", table_name_db, message.chat.id),
-                                 f'<a href="{driverPhone}">{driverPhone}</a>',
+                                 f'<a href="tel:{driverPhone}">{driverPhone}</a>',
                                  await search_from_db("departure_flight_number", table_name_db, message.chat.id)),
-                chat_id=message.chat.id, parse_mode=types.ParseMode.HTML)
+                chat_id=message.chat.id,
+                parse_mode=types.ParseMode.HTML)
 
 
     elif message.text == 'Досуг':  # Реакция на кнопку Досуг
         if await search_from_db("user_name", table_name_db, message.chat.id) is None or len(
                 str(await search_from_db("user_name", table_name_db, message.chat.id))) < 3:
             # Если информации нет для человека
-            table_message = await read_table_google_sheets(table_SH_name, tab_mes)
+#            table_message = await read_table_google_sheets(table_SH_name, tab_mes)
             text = table_message['message'][12]
             await botMes.send_message(text=text.format(f'<a href="@Moiseeva_Ekaterina">@Moiseeva_Ekaterina</a>'),
-                                      chat_id=message.chat.id, parse_mode=types.ParseMode.HTML)
+                                      chat_id=message.chat.id,
+                                      parse_mode=types.ParseMode.HTML)
         else:  # Если информация есть для человека
-            table_message = await read_table_google_sheets(table_SH_name, tab_mes)
-            logger.debug(f'{table_message}')
+#            table_message = await read_table_google_sheets(table_SH_name, tab_mes)
+#            logger.debug(f'{table_message}')
             text = table_message['message'][8]
             await botMes.send_message(
                 text=text.format(await search_from_db("user_name", table_name_db, message.chat.id),
-                                 link_hide(link_table_read)), chat_id=message.chat.id, parse_mode=types.ParseMode.HTML)
+                                 link_hide(link_table_read)),
+                chat_id=message.chat.id,
+                disable_web_page_preview=True,
+                parse_mode=types.ParseMode.HTML)
 
     elif message.text == 'Помощь':  # Реакция на кнопку Помощь
         await help_from_db(table_name_db=table_name_db, help_request='1', user_id=message.chat.id)
-        table_message = await read_table_google_sheets(table_SH_name, tab_mes)
+#        table_message = await read_table_google_sheets(table_SH_name, tab_mes)
         text = table_message['message'][9]
         await botMes.send_message(text=text, chat_id=message.chat.id)
 
@@ -174,10 +184,17 @@ async def handle_message(message: types.Message):
     #     await botMes.send_message(text=text, chat_id=message.chat.id)
 
     elif message.text == 'Информационный канал':  # Реакция на кнопку Информационный канал
-        table_message = await read_table_google_sheets(table_SH_name, tab_mes)
+#        table_message = await read_table_google_sheets(table_SH_name, tab_mes)
         text = table_message['message'][11]
         await botMes.send_message(text=text.format('<a href="https://t.me/+qkAdTCzGt89jYzgy">ссылка</a>'),
                                   chat_id=message.chat.id, parse_mode=types.ParseMode.HTML)
+    elif message.text == 'Дополнительные материалы':  # Реакция на кнопку 'Дополнительные материалы'
+#        table_message = await read_table_google_sheets(table_SH_name, tab_mes)
+        text = table_message['message'][27]
+        await botMes.send_message(text=text.format('<a href="https://t.me/+qkAdTCzGt89jYzgy">ссылка</a>'),
+                                  chat_id=message.chat.id,
+                                  disable_web_page_preview=True,
+                                  parse_mode=types.ParseMode.HTML)
 
 
     elif await search_from_db('help_request', table_name_db, message.chat.id) == '1':  # Пересылка запроса о помощи
@@ -186,7 +203,7 @@ async def handle_message(message: types.Message):
         if await User_search_from_db("user_phone", table_name_db, message.chat.id) is None or len(
                 str(await User_search_from_db("user_phone", table_name_db, message.chat.id))) < 3:
             # Если человека нет в базе
-            table_message = await read_table_google_sheets(table_SH_name, tab_mes)
+#            table_message = await read_table_google_sheets(table_SH_name, tab_mes)
             text = table_message['message'][12]
             await botMes.send_message(text=text.format('<a href="@Moiseeva_Ekaterina">@Moiseeva_Ekaterina</a>'),
                                       chat_id=message.chat.id, parse_mode=types.ParseMode.HTML)
@@ -194,9 +211,9 @@ async def handle_message(message: types.Message):
             id_chat_DDKP = open(os.path.abspath('id.txt')).read()
             phoneMeeting = "+" + str(int(await User_search_from_db("user_phone", table_name_db, message.chat.id)))
             buttons = [['Информация о прибытии', 'Информация о гостинице'], ['Информация об отъезде', 'Досуг'],
-                       ['Помощь', 'Информационный канал']]
+                       ['Помощь', 'Информационный канал'], ['Дополнительные материалы']]
             markup = ReplyKeyboardMarkup(buttons, resize_keyboard=True, one_time_keyboard=False)
-            table_message = await read_table_google_sheets(table_SH_name, tab_mes)
+#            table_message = await read_table_google_sheets(table_SH_name, tab_mes)
             text = table_message['message'][13]
             await botMes.send_message(text=text, chat_id=message.chat.id, reply_markup=markup)
             text = table_message['message'][14]
@@ -233,10 +250,10 @@ async def handle_message(message: types.Message):
                 except:
                     out_table['help_request'][out_table[out_table['ID'] == i].index[0]] = np.nan
 
-            out_table.to_sql('CBAppointment', sq.connect('appointment.db'), if_exists='replace', index=False)
+            out_table.to_sql('CBAppointment', sq.connect('../data/appointment.db'), if_exists='replace', index=False)
             sh_table_link = await read_table_google_sheets(table_SH_name, table_link)
-            sh_table_link.to_sql('Links', sq.connect('appointment.db'), if_exists='replace', index=False)
-            table_message = await read_table_google_sheets(table_SH_name, tab_mes)
+            sh_table_link.to_sql('Links', sq.connect('../data/appointment.db'), if_exists='replace', index=False)
+#            table_message = await read_table_google_sheets(table_SH_name, tab_mes)
             text = table_message['message'][15]
             await botMes.send_message(text=text, chat_id=message.chat.id)
         else:  # Если это не админ
@@ -246,7 +263,7 @@ async def handle_message(message: types.Message):
 
     elif message.text == 'Обновить таблицу ПД':  # Реакция на кнопку Обновить таблицу ПД
         if await search_from_db("user_role", table_name_db, message.chat.id) == 'Админ':  # Если это админ
-            table_message = await read_table_google_sheets(table_SH_name, tab_mes)
+#            table_message = await read_table_google_sheets(table_SH_name, tab_mes)
             text = table_message['message'][16]
             await botMes.send_message(text=text, chat_id=message.chat.id)
         else:  # Если это не админ
@@ -258,7 +275,7 @@ async def handle_message(message: types.Message):
 
     elif message.text == 'Получить доступ к таблице':  # Реакция на кнопку Получить доступ к таблице
         if await search_from_db("user_role", table_name_db, message.chat.id) == 'Админ':  # Если это админ
-            table_message = await read_table_google_sheets(table_SH_name, tab_mes)
+#            table_message = await read_table_google_sheets(table_SH_name, tab_mes)
             text = table_message['message'][17]
             await botMes.send_message(text=text, chat_id=message.chat.id)
         else:  # Если это не админ
@@ -270,22 +287,35 @@ async def handle_message(message: types.Message):
                                                                message.chat.id) == 'Админ':  # Если это админ и верно введена почта, то продолжить
         try:
             await create_writer_google_sheets(table_SH_name, message.text)
-            table_message = await read_table_google_sheets(table_SH_name, tab_mes)
+#            table_message = await read_table_google_sheets(table_SH_name, tab_mes)
             text = table_message['message'][18]
             await botMes.send_message(text=text, chat_id=message.chat.id)
         except:
-            table_message = await read_table_google_sheets(table_SH_name, tab_mes)
+#            table_message = await read_table_google_sheets(table_SH_name, tab_mes)
             text = table_message['message'][19]
             await botMes.send_message(text=text,
                                       chat_id=message.chat.id)
+    else:
+        if await search_from_db("user_role", table_name_db, message.chat.id) == "Гость":
+            buttons = [['Информация о прибытии', 'Информация о гостинице'], ['Информация об отъезде', 'Досуг'],
+                       ['Помощь', 'Информационный канал'], ['Дополнительные материалы']]
+        else:
+            buttons = [['Информация о прибытии', 'Информация о гостинице'], ['Информация об отъезде', 'Досуг'],
+                       ['Обновить основную таблицу', 'Обновить таблицу ПД'], ['Получить доступ к таблице']]
+
+        markup = ReplyKeyboardMarkup(buttons, resize_keyboard=True, one_time_keyboard=False)
+
+        text = table_message['message'][28]
+        await botMes.send_message(text=text, chat_id=message.chat.id, reply_markup=markup)
 
 
 @bot.message_handler(content_types=types.ContentType.CONTACT)  # Регистрация пользователя
 async def contacts(message: types.Message, table_name_db=table_name_db):
     # Ищем человека в БД
+    global table_message
     calB = await user_id_search_from_db(table_name_db, message.contact.phone_number)
     if calB is None:  # Если пользователя нет в БД
-        table_message = await read_table_google_sheets(table_SH_name, tab_mes)
+#        table_message = await read_table_google_sheets(table_SH_name, tab_mes)
         text = table_message['message'][20]
         await message.reply(text=text)
         text = table_message['message'][21]
@@ -301,25 +331,25 @@ async def contacts(message: types.Message, table_name_db=table_name_db):
                               user_phone=message.contact.phone_number)
         # Если у пользователя роль Гость
         if await search_from_db("user_role", table_name_db, message.chat.id) == "Гость":
-            table_message = await read_table_google_sheets(table_SH_name, tab_mes)
+#            table_message = await read_table_google_sheets(table_SH_name, tab_mes)
             text = table_message['message'][22]
             await message.reply(text=text)
             buttons = [['Информация о прибытии', 'Информация о гостинице'], ['Информация об отъезде', 'Досуг'],
-                       ['Помощь', 'Информационный канал']]
+                       ['Помощь', 'Информационный канал'], ['Дополнительные материалы']]
         else:  # Если у пользователя роль Админ
-            table_message = await read_table_google_sheets(table_SH_name, tab_mes)
+#            table_message = await read_table_google_sheets(table_SH_name, tab_mes)
             text = table_message['message'][23]
             await message.reply(text=text.format(await search_from_db('user_name', table_name_db, message.chat.id)))
             buttons = [['Информация о прибытии', 'Информация о гостинице'], ['Информация об отъезде', 'Досуг'],
                        ['Обновить основную таблицу', 'Обновить таблицу ПД'], ['Получить доступ к таблице']]
         markup = ReplyKeyboardMarkup(buttons, resize_keyboard=True, one_time_keyboard=False)
-        table_message = await read_table_google_sheets(table_SH_name, tab_mes)
+#        table_message = await read_table_google_sheets(table_SH_name, tab_mes)
         text = table_message['message'][24]
         await botMes.send_message(chat_id=message.chat.id, text=text, reply_markup=markup)
 
 
 if __name__ == '__main__':
-    # Бесконечно запускаем бот и игнорим ошибки
+    # Бесконечно запускаем бот и выводим ошибки
     while True:
         try:
             print('Started')

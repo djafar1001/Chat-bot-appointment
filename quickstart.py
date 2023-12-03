@@ -5,6 +5,7 @@ import df2gspread as d2g
 import numpy as np
 import pandas as pd
 
+from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
 # 'chat.bot.kpi@gmail.com'
 
 async def create_table_google_sheets(table_name): #Создание новой таблицы
@@ -62,4 +63,13 @@ async def update_table_google_sheets(table_name, sheet_name, out_table): #Обн
     set_with_dataframe(sheet, out_table, row=2, include_column_header=True)
 
 
-
+# async def create_reply_menu(role):
+#     if role:
+#         buttons = [['Информация о прибытии', 'Информация о гостинице'], ['Информация об отъезде', 'Досуг'],
+#                    ['Помощь', 'Информационный канал'], ['Дополнительные материалы']]
+#     else:
+#
+#     markup = ReplyKeyboardMarkup(buttons, resize_keyboard=True, one_time_keyboard=False)
+#
+#     return markup
+#     pass
